@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="notorious.vcxproj" Id="9dcff13d-c839-427d-8474-51daf30ec1ad" />
+</Solution>
